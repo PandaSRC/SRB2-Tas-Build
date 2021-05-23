@@ -250,11 +250,8 @@ void P_SetRandSeedD(const char *rfile, INT32 rline, UINT32 seed)
   *
   * \sa P_GetRandSeed
   */
-
-
- // Zenya's TAS Build
 UINT32 M_RandomizedSeed(void)
 {
-	//return ((totalplaytime & 0xFFFF) << 16)|M_RandomFixed();
+	// return ((totalplaytime & 0xFFFF) << 16)|M_RandomFixed();
   return 0xBADE4404;
 }
