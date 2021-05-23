@@ -145,10 +145,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 // Locations for searching the srb2.pk3
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2_228"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2_228"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2_228"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2_228"
+#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2"
+#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2"
+#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2"
+#define DEFAULTWADLOCATION4 "/usr/games/SRB2"
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
