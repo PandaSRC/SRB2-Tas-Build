@@ -701,7 +701,7 @@ static void ST_drawInfo(void)
 			V_DrawDebugLine(va("Super Paraloop Timer: %5d  ", stplyr->powers[pw_nights_superloop]));
 		}
 	}
-	
+
 	// Also if Sonic & Tails
 	if (tails->mo)
 	{
@@ -1086,6 +1086,9 @@ static void ST_drawInput(void)
 
 	INT32 x = hudinfo[HUD_LIVES].x, y = hudinfo[HUD_LIVES].y;
 
+	if (! modeattacking)
+		x = 2 * x + 58;/* right side of lives count */
+	
 	if (stplyr->powers[pw_carry] == CR_NIGHTSMODE)
 		y -= 16;
 
@@ -2829,7 +2832,11 @@ static void ST_overlayDrawer(void)
 		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
+	{
+		if (! modeattacking)
+			ST_drawInput();
 		LUAh_GameHUD(stplyr);
+	}
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
@@ -2923,3 +2930,4 @@ void ST_Drawer(void)
 		}
 	}
 }
+
