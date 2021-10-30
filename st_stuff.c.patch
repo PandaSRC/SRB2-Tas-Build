@@ -1,0 +1,111 @@
+622a623,710
+> // Zenya's TAS Build
+> 
+> static void ST_drawInfo(void)
+> {
+> 	INT32 height = 170, h = 8, w = 18, lowh;
+> 	void (*textfunc)(INT32, INT32, INT32, const char *);
+> 	player_t *tails = &players[consoleplayer+1];
+> 
+> #define VFLAGS V_MONOSPACE|V_SNAPTOTOP|V_SNAPTORIGHT
+> 
+> 	if ((moviemode == MM_GIF && cv_gif_downscale.value) || vid.dupx == 1)
+> 	{
+> 		textfunc = V_DrawRightAlignedString;
+> 		lowh = ((vid.height/vid.dupx) - 16);
+> 	}
+> 	else
+> 	{
+> 		textfunc = V_DrawRightAlignedSmallString;
+> 		h /= 2;
+> 		w /= 2;
+> 		lowh = 0;
+> 	}
+> 
+> #define V_DrawDebugLine(str) if (lowh && (height > lowh))\
+> 					{\
+> 						V_DrawRightAlignedThinString(320, 8+lowh, VFLAGS|V_REDMAP, "SOME INFO NOT VISIBLE");\
+> 						return;\
+> 					}\
+> 					textfunc(320, height, VFLAGS, str);\
+> 					height -= h;
+> 	// If Sonic & Tails
+> 	if (tails->mo)
+> 	{
+> 		fixed_t distToSonic = P_AproxDistance(stplyr->mo->x - tails->mo->x, stplyr->mo->y - tails->mo->y);
+> 		angle_t angleTowardsSonic = R_PointToAngle2(tails->mo->x, tails->mo->y, stplyr->mo->x, stplyr->mo->y);
+> 		V_DrawDebugLine(va("Tails Z Pos: %5d  ", tails->mo->z>>FRACBITS));
+> 		V_DrawDebugLine(va("Tails Y Pos: %5d  ", tails->mo->y>>FRACBITS));
+> 		V_DrawDebugLine(va("Tails X Pos: %5d  ", tails->mo->x>>FRACBITS));
+> 		V_DrawDebugLine(va("Distance to Sonic: %5d  ", distToSonic>>FRACBITS));
+> 		V_DrawDebugLine(va("Angle towards Sonic: %5d  ", angleTowardsSonic>>FRACBITS));
+> 		V_DrawDebugLine(va("Facing Angle: %5d  ", tails->mo->angle>>FRACBITS));
+> 	}
+> 
+> 	// If not in NiGHTS stage
+> 	if (!(maptol & TOL_NIGHTS))
+> 	{
+> 		V_DrawDebugLine(va("SPEED: %5d  ", stplyr->speed>>FRACBITS));
+> 		V_DrawDebugLine(va("Z Pos: %5d  ", stplyr->mo->z>>FRACBITS));
+> 		if (stplyr->powers[pw_sneakers] > 0)
+> 		{
+> 			V_DrawDebugLine(va("Speed Shoes Timer: %5d  ", stplyr->powers[pw_sneakers]));
+> 		}
+> 		INT16 spinrevs = (6*(stplyr->dashspeed - stplyr->mindash))/(stplyr->maxdash - stplyr->mindash)+1;
+> 		if (spinrevs > 0)
+> 		{
+> 			V_DrawDebugLine(va("Spindash Revs: %5d  ", spinrevs));
+> 		}
+> 	}
+> 	// If in NiGHTS stage
+> 	else
+> 	{
+> 		V_DrawDebugLine(va("Z SPEED: %6d  ", stplyr->mo->momz>>FRACBITS));
+> 		V_DrawDebugLine(va("Y SPEED: %6d  ", stplyr->mo->momy>>FRACBITS));
+> 		V_DrawDebugLine(va("X SPEED: %6d  ", stplyr->mo->momx>>FRACBITS));
+> 		V_DrawDebugLine(va("A Req: %6d  ", mapheaderinfo[gamemap-1]->grades[stplyr->mare].grade[4]));
+> 		V_DrawDebugLine(va("End total: %6d  ", (stplyr->marescore + stplyr->spheres * 50)));
+> 		V_DrawDebugLine(va("End bonus: %6d  ", stplyr->spheres * 50));
+> 
+> 		if (stplyr->powers[pw_nights_superloop] > 0)
+> 		{
+> 			V_DrawDebugLine(va("Super Paraloop Timer: %5d  ", stplyr->powers[pw_nights_superloop]));
+> 		}
+> 	}
+> 
+> 	// Also if Sonic & Tails
+> 	if (tails->mo)
+> 	{
+> 		INT16 tailsspinrevs = (6*(tails->dashspeed - tails->mindash))/(tails->maxdash - tails->mindash)+1;
+> 		if (tailsspinrevs > 0)
+> 		{
+> 			V_DrawDebugLine(va("Tails Spindash Revs: %5d  ", tailsspinrevs));
+> 		}
+> 	}
+> #undef V_DrawDebugFlag
+> #undef V_DrawDebugLine
+> #undef VFLAGS
+> }
+> 
+993c1081,1083
+< 	if (stplyr->powers[pw_carry] == CR_NIGHTSMODE)
+---
+> 	if (! modeattacking)
+> 		y -= 24;
+> 	else if (stplyr->powers[pw_carry] == CR_NIGHTSMODE)
+2608c2698,2699
+< 			ST_drawNiGHTSHUD();
+---
+> 				ST_drawNiGHTSHUD();
+> 
+2620a2712,2713
+> 		// Zenya's TAS Build
+> 		ST_drawInfo();
+2734a2828,2830
+> 	{
+> 		if (! modeattacking)
+> 			ST_drawInput();
+2735a2832
+> 	}
+2823a2921
+> 
