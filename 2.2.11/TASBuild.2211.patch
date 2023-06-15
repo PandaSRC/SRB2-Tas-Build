@@ -1,0 +1,275 @@
+From 4acab77c2d3900da53903cb675e76ec75212e79f Mon Sep 17 00:00:00 2001
+From: P-AS <43502756+P-AS@users.noreply.github.com>
+Date: Wed, 14 Jun 2023 20:25:19 -0400
+Subject: [PATCH] SRB2 2.2.11 TAS Build Patch v2
+
+---
+ src/p_inter.c  |  36 ++++++++++
+ src/p_local.h  |   3 +
+ src/st_stuff.c | 185 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 224 insertions(+)
+
+diff --git a/src/p_inter.c b/src/p_inter.c
+index 03a20db85..e5ca25f4f 100644
+--- a/src/p_inter.c
++++ b/src/p_inter.c
+@@ -4378,3 +4378,39 @@ void P_PlayerFlagBurst(player_t *player, boolean toss)
+ 
+ 	return;
+ }
++
++// SRB2 TAS Build
++// Get boss information
++boolean P_GetBossInfo(int* bossHealth, boolean* bossFlashing)
++{
++	// Search through all the thinkers for enemies.
++	mobj_t* mo;
++	thinker_t* think;
++
++	boolean bossActive = false;
++	*bossHealth = 0;
++	*bossFlashing = false;
++
++	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
++	{
++		if (think->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
++			continue;
++
++		mo = (mobj_t*)think;
++
++		// Check if this is a boss
++		if (mo->flags & MF_BOSS)
++		{
++			bossActive = true;
++			*bossHealth = mo->health;
++
++			// Check if the boss is flashing
++			if (mo->flags2 & MF2_FRET)
++				*bossFlashing = true;
++
++			break; // No need to continue searching
++		}
++	}
++
++	return bossActive;
++}
+diff --git a/src/p_local.h b/src/p_local.h
+index cc060e4ee..17d01d167 100644
+--- a/src/p_local.h
++++ b/src/p_local.h
+@@ -513,6 +513,9 @@ boolean P_CanPickupItem(player_t *player, boolean weapon);
+ void P_DoNightsScore(player_t *player);
+ void P_DoMatchSuper(player_t *player);
+ 
++// SRB2 TAS Build
++boolean P_GetBossInfo(int* bossHealth, boolean* bossFlashing);
++
+ //
+ // P_SPEC
+ //
+diff --git a/src/st_stuff.c b/src/st_stuff.c
+index 206c93273..0b13a74be 100644
+--- a/src/st_stuff.c
++++ b/src/st_stuff.c
+@@ -631,6 +631,187 @@ static void ST_drawDebugInfo(void)
+ #undef VFLAGS
+ }
+ 
++// SRB2 TAS Build
++
++// TAS build config
++#define XYPOS
++#define MAXRINGS
++#define MAXRINGS2L
++#define CEILINGFLOORZ
++#define XYZMOM
++//#define DISABLE
++
++static void ST_drawInfo(void)
++{
++	INT32 height = 170, h = 8, w = 18, lowh;
++	void (*textfunc)(INT32, INT32, INT32, const char *);
++	player_t *tails = &players[consoleplayer+1];
++
++#define VFLAGS V_MONOSPACE|V_SNAPTOTOP|V_SNAPTORIGHT
++
++	if ((moviemode == MM_GIF && cv_gif_downscale.value) || vid.dupx == 1)
++	{
++		textfunc = V_DrawRightAlignedString;
++		lowh = ((vid.height/vid.dupx) - 16);
++	}
++	else
++	{
++		textfunc = V_DrawRightAlignedSmallString;
++		h /= 2;
++		w /= 2;
++		lowh = 0;
++	}
++
++#define V_DrawDebugLine(str) if (lowh && (height > lowh))\
++					{\
++						V_DrawRightAlignedThinString(320, 8+lowh, VFLAGS|V_REDMAP, "SOME INFO NOT VISIBLE");\
++						return;\
++					}\
++					textfunc(320, height, VFLAGS, str);\
++					height -= h;
++
++	// Show ring count with max rings
++	// Default version is contained in one line, but a version that uses two lines is also provided.
++#ifdef MAXRINGS
++	V_DrawDebugLine(va("Rings: %4d/%4d  ", stplyr->rings, nummaprings));
++	V_DrawDebugLine(va("", NULL));
++#elif MAXRINGS2L
++	V_DrawDebugLine(va(" /%4d  ", nummaprings));
++	V_DrawDebugLine(va("Rings:  %4d  ", stplyr->rings));
++	V_DrawDebugLine(va("", NULL));
++#endif
++
++	// If Sonic & Tails
++	if (tails->mo)
++	{
++		fixed_t distToSonic = P_AproxDistance(stplyr->mo->x - tails->mo->x, stplyr->mo->y - tails->mo->y);
++		angle_t angleTowardsSonic = R_PointToAngle2(tails->mo->x, tails->mo->y, stplyr->mo->x, stplyr->mo->y);
++		V_DrawDebugLine(va("Tails Z Pos: %5d  ", tails->mo->z>>FRACBITS));
++		V_DrawDebugLine(va("Tails Y Pos: %5d  ", tails->mo->y>>FRACBITS));
++		V_DrawDebugLine(va("Tails X Pos: %5d  ", tails->mo->x>>FRACBITS));
++		V_DrawDebugLine(va("Distance to Sonic: %5d  ", distToSonic>>FRACBITS));
++		V_DrawDebugLine(va("Angle towards Sonic: %5d  ", angleTowardsSonic>>FRACBITS));
++		V_DrawDebugLine(va("Facing Angle: %5d  ", tails->mo->angle>>FRACBITS));
++		V_DrawDebugLine(va("", NULL));
++	}
++
++	// If not in NiGHTS stage
++	if (!(maptol & TOL_NIGHTS))
++	{
++		const fixed_t angle = AngleFixed(stplyr->mo->angle);
++		V_DrawDebugLine(va("Speed: %5d  ", stplyr->speed>>FRACBITS));
++		V_DrawDebugLine(va("Angle: %5d  ", FixedInt(angle)));
++		V_DrawDebugLine(va("Z Pos: %5d  ", stplyr->mo->z>>FRACBITS));
++#ifdef XYPOS
++		V_DrawDebugLine(va("Y Pos: %5d  ", stplyr->mo->y>>FRACBITS));
++		V_DrawDebugLine(va("X Pos: %5d  ", stplyr->mo->x>>FRACBITS));
++#endif
++
++		// Space Timer
++		if (stplyr->powers[pw_spacetime] > 0)
++		{
++			V_DrawDebugLine(va("Space Timer:   %3d  ", stplyr->powers[pw_spacetime]));
++		}
++
++		// Air Timer
++		if (stplyr->powers[pw_underwater] > 0)
++		{
++			V_DrawDebugLine(va("Air Timer:  %4d  ", stplyr->powers[pw_underwater]));
++		}
++
++		// Spindash Revs
++		INT16 spinrevs = (6*(stplyr->dashspeed - stplyr->mindash))/(stplyr->maxdash - stplyr->mindash)+1;
++		if (spinrevs > 0)
++		{
++			V_DrawDebugLine(va("Spindash Revs: %5d  ", spinrevs));
++		}
++
++		// Tails Spindash Revs
++		if (tails->mo)
++		{
++			INT16 tailsspinrevs = (6*(tails->dashspeed - tails->mindash))/(tails->maxdash - tails->mindash)+1;
++			if (tailsspinrevs > 0)
++			{
++				V_DrawDebugLine(va("Tails Spindash Revs: %5d  ", tailsspinrevs));
++			}
++		}
++
++		// Speed Shoes Timer
++		if (stplyr->powers[pw_sneakers] > 0)
++		{
++			V_DrawDebugLine(va("Speed Shoes Timer: %5d  ", stplyr->powers[pw_sneakers]));
++		}
++
++		// XYZ Momentum
++#ifdef XYZMOM
++		V_DrawDebugLine(va("", NULL));
++		V_DrawDebugLine(va("Z Momentum: %5d  ", stplyr->mo->momz>>FRACBITS));
++		V_DrawDebugLine(va("Y Momentum: %5d  ", stplyr->rmomy>>FRACBITS));
++		V_DrawDebugLine(va("X Momentum: %5d  ", stplyr->rmomx>>FRACBITS));
++#endif
++
++		// Boss info
++		int bossHealth;
++		boolean bossFlashing;
++
++		if (P_GetBossInfo(&bossHealth, &bossFlashing))
++		{
++			V_DrawDebugLine(va("", NULL));
++			V_DrawDebugLine(va("Boss Health: %5d  ", bossHealth));
++			if (bossFlashing)
++			{
++				V_DrawDebugLine(va("Boss is flashing:   Yes  "));
++			}
++			else
++			{
++				V_DrawDebugLine(va("Boss is flashing:    No  "));
++			}
++		}
++
++		// Platform momentum
++		V_DrawDebugLine(va("", NULL));
++		if (stplyr->mo->pmomz>>FRACBITS != 0)
++		{
++			V_DrawDebugLine(va("Platform Z Momentum: %5d  ", stplyr->mo->pmomz>>FRACBITS));
++		}
++		if (stplyr->cmomy>>FRACBITS != 0)
++		{
++			V_DrawDebugLine(va("Conveyor Y Momentum: %5d  ", stplyr->cmomy>>FRACBITS));
++		}
++		if (stplyr->cmomx>>FRACBITS != 0)
++		{
++			V_DrawDebugLine(va("Conveyor X Momentum: %5d  ", stplyr->cmomx>>FRACBITS));
++		}
++
++		// Ceiling and Floor Z Positions
++#ifdef CEILINGFLOORZ
++		V_DrawDebugLine(va("Floor Z Pos: %5d  ", stplyr->mo->floorz>>FRACBITS));
++		V_DrawDebugLine(va("Ceiling Z Pos: %5d  ", stplyr->mo->ceilingz>>FRACBITS));
++#endif
++
++	}
++	// If in NiGHTS stage
++	else
++	{
++		V_DrawDebugLine(va("", NULL));
++		V_DrawDebugLine(va("Z SPEED: %6d  ", stplyr->mo->momz>>FRACBITS));
++		V_DrawDebugLine(va("Y SPEED: %6d  ", stplyr->mo->momy>>FRACBITS));
++		V_DrawDebugLine(va("X SPEED: %6d  ", stplyr->mo->momx>>FRACBITS));
++		V_DrawDebugLine(va("A Req: %6d  ", mapheaderinfo[gamemap-1]->grades[stplyr->mare].grade[4]));
++		V_DrawDebugLine(va("End total: %6d  ", (stplyr->marescore + stplyr->spheres * 50)));
++		V_DrawDebugLine(va("End bonus: %6d  ", stplyr->spheres * 50));
++
++		if (stplyr->powers[pw_nights_superloop] > 0)
++		{
++			V_DrawDebugLine(va("Super Paraloop Timer: %5d  ", stplyr->powers[pw_nights_superloop]));
++		}
++	}
++
++#undef V_DrawDebugFlag
++#undef V_DrawDebugLine
++#undef VFLAGS
++}
++
+ static void ST_drawScore(void)
+ {
+ 	if (F_GetPromptHideHud(hudinfo[HUD_SCORE].y))
+@@ -2643,6 +2824,10 @@ static void ST_overlayDrawer(void)
+ 			if (!modeattacking && LUA_HudEnabled(hud_lives))
+ 				ST_drawLivesArea();
+ 		}
++		// SRB2 TAS Build
++#ifndef DISABLE
++		ST_drawInfo();
++#endif
+ 	}
+ 
+ 	// GAME OVER hud
+-- 
+2.38.1
+
