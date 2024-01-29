@@ -1,13 +1,13 @@
-From e15f2792736fbc3c50341dcdbceb2337267d7609 Mon Sep 17 00:00:00 2001
+From da985d659821afcd691db47b517ca653ff6e04bd Mon Sep 17 00:00:00 2001
 From: P-AS <43502756+P-AS@users.noreply.github.com>
-Date: Mon, 22 Jan 2024 22:27:40 -0500
-Subject: [PATCH] SRB2 2.2.13 TAS Build Patch v3.0
+Date: Mon, 29 Jan 2024 17:22:36 -0500
+Subject: [PATCH] SRB2 2.2.13 TAS Build Patch v3.0.1
 
 ---
- src/p_inter.c  |  38 ++++++++++
+ src/p_inter.c  |  38 +++++++++
  src/p_local.h  |   3 +
- src/st_stuff.c | 202 ++++++++++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 242 insertions(+), 1 deletion(-)
+ src/st_stuff.c | 208 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 248 insertions(+), 1 deletion(-)
 
 diff --git a/src/p_inter.c b/src/p_inter.c
 index 271b6ebc4..3ce3d4ad9 100644
@@ -70,10 +70,10 @@ index 563e257d8..9394203dd 100644
  // P_SPEC
  //
 diff --git a/src/st_stuff.c b/src/st_stuff.c
-index b9f0c6bb9..8c2203bb7 100644
+index b9f0c6bb9..318aade20 100644
 --- a/src/st_stuff.c
 +++ b/src/st_stuff.c
-@@ -647,6 +647,202 @@ static void ST_drawDebugInfo(void)
+@@ -647,6 +647,208 @@ static void ST_drawDebugInfo(void)
  #undef VFLAGS
  }
 
@@ -180,19 +180,25 @@ index b9f0c6bb9..8c2203bb7 100644
 +		}
 +
 +		// Spindash Revs
-+		INT16 spinrevs = (6*(stplyr->dashspeed - stplyr->mindash))/(stplyr->maxdash - stplyr->mindash)+1;
-+		if (spinrevs > 0)
++		if (stplyr->maxdash != stplyr->mindash)
 +		{
-+			V_DrawDebugLine(va("Spindash Revs: %5d  ", spinrevs));
++			INT16 spinrevs = (6*(stplyr->dashspeed - stplyr->mindash))/(stplyr->maxdash - stplyr->mindash)+1;
++			if (spinrevs > 0)
++			{
++				V_DrawDebugLine(va("Spindash Revs: %5d  ", spinrevs));
++			}
 +		}
 +
 +		// Tails Spindash Revs
 +		if (tails->mo)
 +		{
-+			INT16 tailsspinrevs = (6*(tails->dashspeed - tails->mindash))/(tails->maxdash - tails->mindash)+1;
-+			if (tailsspinrevs > 0)
++			if (tails->maxdash != tails->mindash)
 +			{
-+				V_DrawDebugLine(va("Tails Spindash Revs: %5d  ", tailsspinrevs));
++				INT16 tailsspinrevs = (6*(tails->dashspeed - tails->mindash))/(tails->maxdash - tails->mindash)+1;
++				if (tailsspinrevs > 0)
++				{
++					V_DrawDebugLine(va("Tails Spindash Revs: %5d  ", tailsspinrevs));
++				}
 +			}
 +		}
 +
@@ -276,7 +282,7 @@ index b9f0c6bb9..8c2203bb7 100644
  static void ST_drawScore(void)
  {
  	if (F_GetPromptHideHud(hudinfo[HUD_SCORE].y))
-@@ -2693,6 +2889,10 @@ static void ST_overlayDrawer(void)
+@@ -2693,6 +2895,10 @@ static void ST_overlayDrawer(void)
  			if (!modeattacking && LUA_HudEnabled(hud_lives))
  				ST_drawLivesArea();
  		}
