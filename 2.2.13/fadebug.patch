@@ -1,0 +1,78 @@
+From 86ded554036c2d6b6423d2f63343f0de1ec37bf3 Mon Sep 17 00:00:00 2001
+From: PAS <43502756+P-AS@users.noreply.github.com>
+Date: Sat, 30 Mar 2024 20:07:06 -0400
+Subject: [PATCH] Workaround for music fade bug on libTAS
+
+---
+ src/sdl/mixer_sound.c | 50 ++++---------------------------------------
+ 1 file changed, 4 insertions(+), 46 deletions(-)
+
+diff --git a/src/sdl/mixer_sound.c b/src/sdl/mixer_sound.c
+index 0a39c7f28..03de012b6 100644
+--- a/src/sdl/mixer_sound.c
++++ b/src/sdl/mixer_sound.c
+@@ -1515,53 +1515,10 @@ void I_StopFadingSong(void)
+ 
+ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
+ {
+-	INT16 volume_delta;
++	if (callback)
++		(*callback)();
+ 
+-	source_volume = min(source_volume, 100);
+-	volume_delta = (INT16)(target_volume - source_volume);
+-
+-	I_StopFadingSong();
+-
+-	if (!ms && volume_delta)
+-	{
+-		I_SetInternalMusicVolume(target_volume);
+-		if (callback)
+-			(*callback)();
+-		return true;
+-
+-	}
+-	else if (!volume_delta)
+-	{
+-		if (callback)
+-			(*callback)();
+-		return true;
+-	}
+-
+-	// Round MS to nearest 10
+-	// If n - lower > higher - n, then round up
+-	ms = (ms - ((ms / 10) * 10) > (((ms / 10) * 10) + 10) - ms) ?
+-		(((ms / 10) * 10) + 10) // higher
+-		: ((ms / 10) * 10); // lower
+-
+-	if (!ms)
+-		I_SetInternalMusicVolume(target_volume);
+-	else if (source_volume != target_volume)
+-	{
+-		fading_id = SDL_AddTimer(10, music_fade, NULL);
+-		if (fading_id)
+-		{
+-			is_fading = true;
+-			fading_timer = fading_duration = ms;
+-			fading_source = source_volume;
+-			fading_target = target_volume;
+-			fading_callback = callback;
+-
+-			if (internal_volume != source_volume)
+-				I_SetInternalMusicVolume(source_volume);
+-		}
+-	}
+-
+-	return is_fading;
++	return true;
+ }
+ 
+ boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
+@@ -1582,3 +1539,4 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
+ 		return false;
+ }
+ #endif
++
+-- 
+2.44.0
+
